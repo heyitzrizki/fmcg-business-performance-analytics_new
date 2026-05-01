@@ -1,0 +1,8 @@
+step,amount,type
+Gross Sales,17080515.05,total
+Discount / Revenue Adjustment,-2630595.0500000007,relative
+Net Revenue,14449920.0,total
+COGS,-8591482.83,relative
+Logistics Cost,-985539.8300000001,relative
+Marketing Spend,-1563932.03,relative
+Profit,3308965.31,total

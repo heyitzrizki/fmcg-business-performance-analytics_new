@@ -1,0 +1,8 @@
+insight_type,insight
+Best model,Seasonal Naive achieved the lowest test MAPE among the evaluated models.
+Forecast accuracy,The selected model produced a test MAPE of 8.32%.
+Model selection,The final model was selected based on out-of-sample performance rather than model complexity.
+ML benchmark result,"The ML benchmark did not outperform the seasonal baseline, likely because the target is aggregated at monthly level with limited effective observations."
+Short-term outlook,"The next 6-month forecasted net revenue is 2,543,618 USD."
+Budget risk,6 out of 6 forecast months are below the simulated budget outlook.
+Planning caution,"Forecast results should be reviewed together with promotion plans, pricing strategy, channel plans, and market conditions."

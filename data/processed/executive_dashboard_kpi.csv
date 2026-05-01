@@ -1,0 +1,15 @@
+metric,value
+Total Orders,18240
+Total Units Sold,3883474
+Gross Sales,17080515.05
+Net Revenue,14449920.0
+Profit,3308965.31
+Profit Margin,0.22899540689498626
+COGS Ratio,0.5945695775478341
+Logistics Cost Ratio,0.06820382604194349
+Marketing Spend Ratio,0.10823118951523607
+Latest Year Revenue Budget Achievement,0.959583203289984
+Latest Year Profit Budget Achievement,0.947249063609925
+Best Forecast Model,Seasonal Naive
+Forecast Test MAPE,0.08319077267129314
+Next 6-Month Forecast Revenue,2543617.7800000003

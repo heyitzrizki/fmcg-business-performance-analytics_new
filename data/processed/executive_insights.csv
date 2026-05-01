@@ -1,0 +1,7 @@
+insight_title,insight_text
+Top Revenue Category,"Beverages generated the highest net revenue, contributing 25.9% of total revenue."
+Top Revenue Channel,Wholesale was the leading sales channel by net revenue.
+Top Revenue Region,Europe was the strongest region by net revenue.
+Highest Margin Category,Personal Care delivered the highest profit margin among categories.
+Budget Watch,17 out of 36 months were below the simulated revenue budget.
+Forecasting Note,Seasonal Naive achieved the lowest test error and is used for the short-term planning outlook.

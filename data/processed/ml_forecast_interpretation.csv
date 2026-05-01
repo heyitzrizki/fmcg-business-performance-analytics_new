@@ -1,0 +1,5 @@
+insight_type,insight
+ML benchmark purpose,A quick ML benchmark was added to compare machine learning models against interpretable time-series baselines.
+Leakage control,"Only calendar, lag, and rolling historical revenue features were used to avoid using current-month or future information."
+Data limitation,"Because the monthly aggregate dataset is small, ML results should be interpreted as an experimental benchmark rather than a production forecasting model."
+Final selection rule,"The final model is selected based on test-period MAPE, not model complexity."

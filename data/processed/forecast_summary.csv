@@ -1,0 +1,11 @@
+metric,value
+Best Forecast Model,Seasonal Naive
+Best Model Group,Time-Series / Baseline
+Test MAPE,0.08319077267129314
+Next Month Forecast Revenue,464740.22
+Next 3-Month Forecast Revenue,1269964.0999999999
+Next 6-Month Forecast Revenue,2543617.7800000003
+Next 3-Month Budget Gap,-101597.12800000026
+Next 6-Month Budget Gap,-203489.42239999957
+Forecast Horizon,6 months
+Planning Band Method,Best model test MAPE applied as planning band
