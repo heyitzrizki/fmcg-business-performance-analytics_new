@@ -1,126 +1,204 @@
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
 from utils import (
     add_page_style,
-    apply_sales_filters,
     format_currency,
-    format_number,
     format_pct,
     load_data,
-    summarize_filtered_sales,
 )
 
 
-st.set_page_config(page_title="Sales Performance", layout="wide")
+st.set_page_config(page_title="P&L & Margin Analysis", layout="wide")
 add_page_style()
 data = load_data()
 
-st.title("Sales Performance")
-st.caption("Analyze sales performance across time, region, country, channel, category, brand, product, and promotion type.")
+st.title("P&L & Margin Analysis")
+st.caption("Analyze profitability structure, margin pressure, cost ratios, and loss-making transaction patterns.")
 
-sales = data["sales_dashboard_data"]
+pnl_summary = data["pnl_dashboard_summary"]
+pnl_waterfall = data["pnl_waterfall"]
+pnl_monthly = data["pnl_monthly"]
+pnl_category = data["pnl_category"]
+pnl_channel = data["pnl_channel"]
+pnl_region = data["pnl_region"]
+negative_profit = data["negative_profit_summary"]
 
-if sales.empty:
-    st.error("sales_dashboard_data.csv is missing or empty.")
-    st.stop()
 
-filtered = apply_sales_filters(sales)
-summary = summarize_filtered_sales(filtered)
+def get_pnl_metric(metric_name):
+    if pnl_summary.empty:
+        return None
+    row = pnl_summary[pnl_summary["metric"] == metric_name]
+    if row.empty:
+        return None
+    try:
+        return float(row["value"].iloc[0])
+    except Exception:
+        return row["value"].iloc[0]
+
 
 c1, c2, c3, c4 = st.columns(4)
-c1.metric("Net Revenue", format_currency(summary["net_revenue"]))
-c2.metric("Profit", format_currency(summary["profit"]))
-c3.metric("Units Sold", format_number(summary["units_sold"]))
-c4.metric("Profit Margin", format_pct(summary["profit_margin"]))
+c1.metric("Gross Sales", format_currency(get_pnl_metric("Gross Sales")))
+c2.metric("Net Revenue", format_currency(get_pnl_metric("Net Revenue")))
+c3.metric("Gross Profit", format_currency(get_pnl_metric("Gross Profit")))
+c4.metric("Profit", format_currency(get_pnl_metric("Profit")))
 
-c5, c6 = st.columns(2)
-c5.metric("Average Discount", format_pct(summary["avg_discount"]))
-c6.metric("Average Selling Price", format_currency(summary["avg_selling_price"], decimals=2))
+c5, c6, c7, c8 = st.columns(4)
+c5.metric("Gross Margin", format_pct(get_pnl_metric("Gross Margin")))
+c6.metric("Contribution Margin", format_pct(get_pnl_metric("Contribution Margin")))
+c7.metric("Profit Margin", format_pct(get_pnl_metric("Profit Margin")))
+c8.metric("Marketing Spend", format_currency(get_pnl_metric("Marketing Spend")))
 
-if filtered.empty:
-    st.warning("No data available for the selected filters.")
-    st.stop()
+st.markdown(
+    """
+    <div class="warning-box">
+        <b>How to read this page:</b><br>
+        This page separates revenue, direct costs, marketing spend, logistics costs, and profit.
+        It helps identify whether business performance is driven by topline growth, cost efficiency,
+        or margin pressure.
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
-st.markdown("## Sales Trend")
+st.markdown("## Overall P&L Waterfall")
 
-monthly = (
-    filtered.groupby(["Year", "Month", "Year_Month"], as_index=False)
-    .agg(
-        net_revenue=("Net_Revenue_USD", "sum"),
-        profit=("Profit_USD", "sum"),
-        units_sold=("Units_Sold", "sum"),
+if not pnl_waterfall.empty:
+    fig = go.Figure(
+        go.Waterfall(
+            name="P&L",
+            orientation="v",
+            measure=pnl_waterfall["type"],
+            x=pnl_waterfall["step"],
+            y=pnl_waterfall["amount"],
+            text=[f"${x:,.0f}" for x in pnl_waterfall["amount"]],
+            textposition="outside",
+        )
     )
-    .sort_values(["Year", "Month"])
-)
+    fig.update_layout(
+        title="Overall P&L Waterfall",
+        yaxis_title="USD",
+        showlegend=False,
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
-fig = px.line(
-    monthly,
-    x="Year_Month",
-    y="net_revenue",
-    markers=True,
-    title="Filtered Monthly Net Revenue",
-)
-st.plotly_chart(fig, use_container_width=True)
+st.markdown("## Margin Trend")
 
-st.markdown("## Sales Breakdown")
+if not pnl_monthly.empty:
+    pnl_monthly_sorted = pnl_monthly.sort_values(["Year", "Month"])
+
+    fig = px.line(
+        pnl_monthly_sorted,
+        x="Year_Month",
+        y=["gross_margin", "contribution_margin", "profit_margin"],
+        markers=True,
+        title="Monthly Margin Trend",
+    )
+    fig.update_layout(yaxis_tickformat=".1%")
+    st.plotly_chart(fig, use_container_width=True)
+
+st.markdown("## Category and Channel Profitability")
 
 c1, c2 = st.columns(2)
 
 with c1:
-    category = (
-        filtered.groupby("Product_Category", as_index=False)
-        .agg(net_revenue=("Net_Revenue_USD", "sum"), profit=("Profit_USD", "sum"))
-        .sort_values("net_revenue", ascending=False)
-    )
-    fig = px.bar(category, x="Product_Category", y="net_revenue", title="Revenue by Product Category")
-    st.plotly_chart(fig, use_container_width=True)
+    if not pnl_category.empty:
+        fig = px.bar(
+            pnl_category.sort_values("profit_margin", ascending=False),
+            x="Product_Category",
+            y="profit_margin",
+            title="Profit Margin by Product Category",
+        )
+        fig.update_layout(yaxis_tickformat=".1%")
+        st.plotly_chart(fig, use_container_width=True)
 
 with c2:
-    channel = (
-        filtered.groupby("Sales_Channel", as_index=False)
-        .agg(net_revenue=("Net_Revenue_USD", "sum"), profit=("Profit_USD", "sum"))
-        .sort_values("net_revenue", ascending=False)
-    )
-    fig = px.bar(channel, x="Sales_Channel", y="net_revenue", title="Revenue by Sales Channel")
-    st.plotly_chart(fig, use_container_width=True)
+    if not pnl_channel.empty:
+        fig = px.bar(
+            pnl_channel.sort_values("profit_margin", ascending=False),
+            x="Sales_Channel",
+            y="profit_margin",
+            title="Profit Margin by Sales Channel",
+        )
+        fig.update_layout(yaxis_tickformat=".1%")
+        st.plotly_chart(fig, use_container_width=True)
+
+st.markdown("## Cost Pressure")
 
 c3, c4 = st.columns(2)
 
 with c3:
-    promo = (
-        filtered.groupby("Promotion_Type", as_index=False)
-        .agg(
-            net_revenue=("Net_Revenue_USD", "sum"),
-            profit=("Profit_USD", "sum"),
-            avg_discount=("Discount_Pct", "mean"),
+    if not pnl_category.empty:
+        cost_df = pnl_category[
+            ["Product_Category", "cogs_ratio", "logistics_ratio", "marketing_ratio"]
+        ].copy()
+
+        cost_long = cost_df.melt(
+            id_vars="Product_Category",
+            value_vars=["cogs_ratio", "logistics_ratio", "marketing_ratio"],
+            var_name="Cost Type",
+            value_name="Ratio",
         )
-        .sort_values("net_revenue", ascending=False)
-    )
-    fig = px.bar(promo, x="Promotion_Type", y="net_revenue", title="Revenue by Promotion Type")
-    st.plotly_chart(fig, use_container_width=True)
+
+        fig = px.bar(
+            cost_long,
+            x="Product_Category",
+            y="Ratio",
+            color="Cost Type",
+            barmode="group",
+            title="Cost Ratios by Product Category",
+        )
+        fig.update_layout(yaxis_tickformat=".1%")
+        st.plotly_chart(fig, use_container_width=True)
 
 with c4:
-    country = (
-        filtered.groupby("Country", as_index=False)
-        .agg(net_revenue=("Net_Revenue_USD", "sum"), profit=("Profit_USD", "sum"))
-        .sort_values("net_revenue", ascending=False)
-        .head(15)
+    if not pnl_region.empty:
+        fig = px.bar(
+            pnl_region.sort_values("logistics_ratio", ascending=False),
+            x="Region",
+            y="logistics_ratio",
+            title="Logistics Cost Ratio by Region",
+        )
+        fig.update_layout(yaxis_tickformat=".1%")
+        st.plotly_chart(fig, use_container_width=True)
+
+st.markdown("## Negative Profit Review")
+
+if not negative_profit.empty:
+    st.markdown(
+        """
+        <div class="section-card">
+            <div class="muted">
+            This table highlights product-channel-promotion combinations that generated negative profit.
+            These rows can be reviewed for pricing, promotion efficiency, logistics cost, or product mix issues.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
-    fig = px.bar(country, x="Country", y="net_revenue", title="Top Countries by Revenue")
-    st.plotly_chart(fig, use_container_width=True)
 
-st.markdown("## Top Products")
+    display_cols = [
+        "Product_Category",
+        "Sales_Channel",
+        "Promotion_Type",
+        "loss_transaction_count",
+        "net_revenue",
+        "total_loss",
+        "avg_profit_margin",
+        "avg_discount_pct",
+        "marketing_spend",
+        "logistics_cost",
+    ]
 
-top_products = (
-    filtered.groupby(["Product_Category", "Brand", "Product_Name", "SKU"], as_index=False)
-    .agg(
-        net_revenue=("Net_Revenue_USD", "sum"),
-        profit=("Profit_USD", "sum"),
-        units_sold=("Units_Sold", "sum"),
+    existing_cols = [c for c in display_cols if c in negative_profit.columns]
+    st.dataframe(
+        negative_profit[existing_cols].head(30),
+        use_container_width=True,
+        hide_index=True,
     )
-    .sort_values("net_revenue", ascending=False)
-    .head(20)
-)
 
-st.dataframe(top_products, use_container_width=True, hide_index=True)
+st.markdown("## Category P&L Table")
+
+if not pnl_category.empty:
+    st.dataframe(pnl_category, use_container_width=True, hide_index=True)
