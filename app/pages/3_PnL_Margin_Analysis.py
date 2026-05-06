@@ -202,3 +202,4 @@ st.markdown("## Category P&L Table")
 
 if not pnl_category.empty:
     st.dataframe(pnl_category, use_container_width=True, hide_index=True)
+
